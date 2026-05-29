@@ -14,6 +14,7 @@ public:
 private:
 	int hImage_;//‰æ‘œID
 	Point pos_;
+	Point oldPos;
 	DIR dir_;//ˆÚ“®•ûŒü
 };
 

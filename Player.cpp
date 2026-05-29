@@ -11,7 +11,8 @@ namespace
 	const DIR PLAYER_INIT_DIR = { DOWN }; //プレイヤーの初期方向
 	const int animFrame[4]{ 0, 1, 2, 1 }; //アニメーションのコマ番号
 	const float ANIM_INTERVAL = 0.2f; //アニメーションの1コマのインターバル
-
+	float posy = 0;
+	float posx = 0;
 }
 
 
@@ -28,19 +29,23 @@ Player::~Player()
 
 void Player::Update()
 {
+	oldPos = pos_;
 	if (Input::IsKeyDown(KEY_INPUT_UP))
 	{
 		dir_ = UP;
+		posy = pos_.y;
 		pos_.y -= PLAYER_DRAW_SIZE;
 	}
 	else if (Input::IsKeyDown(KEY_INPUT_DOWN))
 	{
 		dir_ = DOWN;
+		posy = pos_.y;
 		pos_.y += PLAYER_DRAW_SIZE;
 	}
 	else if (Input::IsKeyDown(KEY_INPUT_LEFT))
 	{
 		dir_ = LEFT;
+		posx = pos_.x;
 		pos_.x -= PLAYER_DRAW_SIZE;
 	}
 	else if (Input::IsKeyDown(KEY_INPUT_RIGHT))
@@ -52,10 +57,14 @@ void Player::Update()
 	int mapValue = FindGameObject<Stage>()->GetMap(newPos.x / CHA_SIZE, newPos.y / CHA_SIZE);
 
 	//移動先がステージの外に出ないようにする
-	if (!(newPos.x < 1 || newPos.x >(STAGE_WIDTH - 2) * PLAYER_DRAW_SIZE
-		|| newPos.y < 1 || newPos.y >(STAGE_HEIGHT - 2) * PLAYER_DRAW_SIZE))
+	bool hitWall =
+		(newPos.x < 1 ||
+			newPos.x >(STAGE_WIDTH - 2) * PLAYER_DRAW_SIZE ||
+			newPos.y < 1 ||
+			newPos.y >(STAGE_HEIGHT - 2) * PLAYER_DRAW_SIZE);
+	if (hitWall)
 	{
-		pos_ = newPos;
+		pos_ = oldPos;
 	}
 }
 
@@ -67,9 +76,10 @@ void Player::Draw()
 
 	Rect iRect[4] = {
 		{  nowFrame * PLAYER_IMAGE_SIZE, 3 * PLAYER_IMAGE_SIZE, PLAYER_IMAGE_SIZE, PLAYER_IMAGE_SIZE},
+		{  nowFrame * PLAYER_IMAGE_SIZE, 2 * PLAYER_IMAGE_SIZE, PLAYER_IMAGE_SIZE, PLAYER_IMAGE_SIZE},
 		{  nowFrame * PLAYER_IMAGE_SIZE, 0 * PLAYER_IMAGE_SIZE, PLAYER_IMAGE_SIZE, PLAYER_IMAGE_SIZE},
-		{  nowFrame * PLAYER_IMAGE_SIZE, 1 * PLAYER_IMAGE_SIZE, PLAYER_IMAGE_SIZE, PLAYER_IMAGE_SIZE},
-		{  nowFrame * PLAYER_IMAGE_SIZE, 2 * PLAYER_IMAGE_SIZE, PLAYER_IMAGE_SIZE, PLAYER_IMAGE_SIZE}
+		{  nowFrame * PLAYER_IMAGE_SIZE, 1 * PLAYER_IMAGE_SIZE, PLAYER_IMAGE_SIZE, PLAYER_IMAGE_SIZE}
+
 	};
 
 	DrawBox(pos_.x, pos_.y, pos_.x + PLAYER_DRAW_SIZE, pos_.y + PLAYER_DRAW_SIZE,

@@ -27,50 +27,68 @@ Enemy::~Enemy()
 
 void Enemy::Update()
 {
-	//GetRand(数値)
-	//3秒に1回向きをランダムに変える
-	static float dir_timer = 3.0f;
 	static float prog_timer = 0.5f;
-	float dt = Time::DeltaTime();
-	dir_timer = dir_timer - dt;
-	prog_timer = prog_timer - dt;
-	if (dir_timer < 0.0f)
-	{
-		dir_ = (DIR)(GetRand(3));
-		dir_timer = 3.0f + dir_timer;
-	}
 
-	Point newPos = pos_;
+	float dt = Time::DeltaTime();
+	prog_timer -= dt;
+
 	if (prog_timer < 0.0f)
 	{
+		Point newPos = pos_;
+
+		// 現在の向きに1マス進む
 		switch (dir_)
 		{
 		case UP:
 			newPos.y -= ENEMY_DRAW_SIZE;
 			break;
-		case DOWN:
-			newPos.y += ENEMY_DRAW_SIZE;
-			break;
-		case LEFT:
-			newPos.x -= ENEMY_DRAW_SIZE;
-			break;
 		case RIGHT:
 			newPos.x += ENEMY_DRAW_SIZE;
 			break;
-		default:
+		case DOWN:
+			newPos.y += ENEMY_DRAW_SIZE;
 			break;
-		}
-		int mapValue = FindGameObject<Stage>()->GetMap(newPos.x / CHA_SIZE, newPos.y / CHA_SIZE);
 
-		//移動先がステージの外に出ないようにする
-		if (!(newPos.x < 1 || newPos.x >(STAGE_WIDTH - 2) * ENEMY_DRAW_SIZE
-			|| newPos.y < 1 || newPos.y >(STAGE_HEIGHT - 2) * ENEMY_DRAW_SIZE))
+		case LEFT:
+			newPos.x -= ENEMY_DRAW_SIZE;
+			break;
+
+		}
+
+		// 壁判定
+		bool hitWall =
+			(newPos.x < 1 ||
+				newPos.x >(STAGE_WIDTH - 2) * ENEMY_DRAW_SIZE ||
+				newPos.y < 1 ||
+				newPos.y >(STAGE_HEIGHT - 2) * ENEMY_DRAW_SIZE);
+
+		// 壁なら時計回りに方向転換
+		if (hitWall)
 		{
+			dir_ = (DIR)((dir_ + 1) % 4);
+		}
+		else
+		{
+			// 移動
 			pos_ = newPos;
 		}
-		prog_timer = 0.5f + prog_timer;
-	}
+		int angle = 60;
+		int r = ENEMY_DRAW_SIZE * 5;
+		int cx = (int)(pos_.x + cosf(angle) * r);
+		int cy = (int)(pos_.y + sinf(angle) * r);
+		int mapValue = FindGameObject<Stage>()->GetMap(newPos.x / CHA_SIZE, ENEMY_DRAW_SIZE / CHA_SIZE);
+		if (mapValue == 0)
+		{
+			SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
+			DrawBox(, , , , GetColor(255, 0, 0), TRUE);
+		}
+		else
+		{
+			SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+		}
 
+		prog_timer = 0.5f;
+	}
 }
 
 void Enemy::Draw()
@@ -81,9 +99,9 @@ void Enemy::Draw()
 
 	Rect iRect[4] = {
 		{  nowFrame * ENEMY_SIZE, 3 * ENEMY_SIZE, ENEMY_SIZE, ENEMY_SIZE},
+		{  nowFrame * ENEMY_SIZE, 2 * ENEMY_SIZE, ENEMY_SIZE, ENEMY_SIZE},
 		{  nowFrame * ENEMY_SIZE, 0 * ENEMY_SIZE, ENEMY_SIZE, ENEMY_SIZE},
 		{  nowFrame * ENEMY_SIZE, 1 * ENEMY_SIZE, ENEMY_SIZE, ENEMY_SIZE},
-		{  nowFrame * ENEMY_SIZE, 2 * ENEMY_SIZE, ENEMY_SIZE, ENEMY_SIZE}
 	};
 	DrawBox(pos_.x, pos_.y, pos_.x + ENEMY_DRAW_SIZE, pos_.y + ENEMY_DRAW_SIZE,
 		GetColor(255, 255, 0), FALSE,2);
