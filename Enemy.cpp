@@ -12,21 +12,28 @@ namespace
 	const float ANIM_INTERVAL = 0.2f;
 }
 
-
 Enemy::Enemy()
 	: GameObject() 
 {
 	hImage_ = LoadGraph("Assets/panda_R.png");
 	pos_ = ENEMY_START_POS; //32はブロックの位置pos_
 	dir_ = INIT_ENEMY_DIR;
+	state_ = new PatrollState(this);
 }
 
 Enemy::~Enemy()
 {
+	delete state_;
+	delete nextState_;
 }
 
 void Enemy::Update()
 {
+	if (state_ != nullptr)
+	{
+		state_->Update(*this);
+	}
+	ApplyStateChange();
 	static float prog_timer = 0.5f;
 
 	float dt = Time::DeltaTime();
@@ -62,7 +69,6 @@ void Enemy::Update()
 				newPos.y < 1 ||
 				newPos.y >(STAGE_HEIGHT - 2) * ENEMY_DRAW_SIZE);
 
-		// 壁なら時計回りに方向転換
 		if (hitWall)
 		{
 			dir_ = (DIR)((dir_ + 1) % 4);
@@ -80,7 +86,7 @@ void Enemy::Update()
 		if (mapValue == 0)
 		{
 			SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
-			DrawBox(, , , , GetColor(255, 0, 0), TRUE);
+			DrawBox(pos_.x, pos_.y, pos_.x + CHA_SIZE, pos_.y + CHA_SIZE, GetColor(255, 0, 0), TRUE);
 		}
 		else
 		{
@@ -89,6 +95,7 @@ void Enemy::Update()
 
 		prog_timer = 0.5f;
 	}
+	
 }
 
 void Enemy::Draw()
@@ -112,4 +119,28 @@ void Enemy::Draw()
 		animTimer = ANIM_INTERVAL + animTimer;
 	}
 	animTimer = animTimer - Time::DeltaTime();
+}
+void Enemy::ApplyStateChange()
+{
+	if (nextState_ == nullptr)
+	{
+		return;
+	}
+	delete state_;
+	state_ = nextState_;
+	nextState_ = nullptr;
+}
+bool Enemy::isFindPlayer()
+{
+	return false;
+}
+
+bool Enemy::isAttackRange()
+{
+	return false;
+}
+
+bool Enemy::isSearchTimeOver()
+{
+	return false;
 }
