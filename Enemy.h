@@ -1,125 +1,89 @@
 #pragma once
-#include ".\Library\GameObject.h"
+#include "Library/GameObject.h"
 #include "global.h"
 
-class Enemy;
+class EnemyStateBase;
 
-class  EnemyStateBase {
-public:
-	EnemyStateBase(Enemy* parent){enemy = parent;}
-	virtual~EnemyStateBase(){}
-	virtual void Update(Enemy& enemy)
-	{
-		enemy.Patroll();
-	}
-protected:
-	Enemy* enemy;
-};
-
-class Enemy :
-    public GameObject
+class Enemy : public GameObject
 {
 private:
 	EnemyStateBase* state_ = nullptr;
 	EnemyStateBase* nextState_ = nullptr;
-	friend class PatrollState;
-	friend class ChaseState;
-	friend class Attack;
-	friend class Search;
-public:
-	int hImage_;//‰æ‘œID
-	Point pos_;//ˆÊ’u
-	DIR dir_;//ˆÚ“®•ûŒü
-	void ChangeState(EnemyStateBase* nextState) {
-		delete nextState_;
-		nextState_ = nextState;
-	}
-	void ApplyStateChange();
 
-	bool isFindPlayer();
-	bool isAttackRange();
-	bool isSearchTimeOver();
-	enum State {
-		Patroll,
-		Chase,
-		Attack,
-		Search
-	};
+	int hImage_;
+	Point pos_;    
+	Point oldPos_; 
+	DIR dir_;
+	float searchTimer_;
+
 public:
 	Enemy();
 	~Enemy();
-	void Update() {
-		if (state_ != nullptr)
-		{
-			state_->Update(*this);
-		}
 
-		ApplyStateChange();
-	}
+	void Update() override;
 	void Draw() override;
+
+	void ChangeState(EnemyStateBase* nextState)
+	{
+		delete nextState_;
+		nextState_ = nextState;
+	}
+
+	void ApplyStateChange(); 
+
+	Point GetPos() const { return pos_; }
+	Point GetOldPos() const { return oldPos_; }
+	DIR GetDir() const { return dir_; }
+	void SetDir(DIR dir) { dir_ = dir; }
+
+	void SetPos(Point newPos)
+	{
+		oldPos_ = pos_;
+		pos_ = newPos;
+	}
+
+	int GetPlayerDistanceGrid();
+	bool isFindPlayer();
+	bool isAttackRange();
+	bool isSearchTimeOver();
+
+	void Patroll();
+	void Chase();
+	void Attack();
+	void Search();
+};
+
+class EnemyStateBase
+{
+public:
+	virtual ~EnemyStateBase() {}
+	virtual void Update(Enemy& enemy) = 0;
 };
 
 class PatrollState : public EnemyStateBase
 {
 public:
-	PatrollState(Enemy*parent);
-	~PatrollState();
-	void Update(Enemy& enemy)override
-	{
-		enemy.Patroll();
-		if (enemy.isFindPlayer())
-		{
-			enemy.ChangeState(new ChaseState());
-		}
-	}
+	PatrollState(Enemy* enemy) {}
+	void Update(Enemy& enemy) override;
 };
 
 class ChaseState : public EnemyStateBase
 {
 public:
-	ChaseState();
-	~ChaseState();
-	void Update(Enemy& enemy)override
-	{
-		enemy.Chase();
-		if (enemy.isAttackRange())
-		{
-			enemy.ChangeState(new AttackState);
-		}
-		if (enemy.isSearchTimeOver())
-		{
-			enemy.ChangeState(new SearchState);
-		}
-	}
-
+	ChaseState(Enemy* enemy) {}
+	void Update(Enemy& enemy) override;
 };
 
 class AttackState : public EnemyStateBase
 {
 public:
-	AttackState();
-	~AttackState();
-	void Update(Enemy& enemy)override
-	{
-		enemy.Attack();
-		if (enemy.isFindPlayer())
-		{
-			enemy.ChangeState(new ChaseState);
-		}
-	}
+	AttackState(Enemy* enemy) {}
+	void Update(Enemy& enemy) override;
 };
 
 class SearchState : public EnemyStateBase
 {
 public:
-	SearchState();
-	~SearchState();
-	void Update(Enemy& enemy)override
-	{
-		enemy.Search();
-		if (enemy.isFindPlayer())
-		{
-			enemy.ChangeState(new PatrollState(this));
-		}
-	}
+	SearchState(Enemy* enemy) {}
+	void Update(Enemy& enemy) override;
 };
